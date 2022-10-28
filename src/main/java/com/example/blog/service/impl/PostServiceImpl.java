@@ -1,9 +1,7 @@
 package com.example.blog.service.impl;
 
 import com.example.blog.entity.Post;
-import com.example.blog.entity.Role;
 import com.example.blog.repository.PostRepository;
-import com.example.blog.repository.RoleRepository;
 import com.example.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;

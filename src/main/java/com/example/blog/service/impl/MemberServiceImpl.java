@@ -18,9 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -72,7 +70,7 @@ public class MemberServiceImpl implements MemberService, UserDetailsService {
         if (foundUser.isEmpty())
             throw new UsernameNotFoundException(String.format("member %s can not found in database", username));
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        foundUser.get().getRoles().stream().forEach(role -> authorities.add(new SimpleGrantedAuthority(role.getName())));
+        foundUser.get().getRoles().forEach(role -> authorities.add(new SimpleGrantedAuthority(role.getName())));
         return new User(foundUser.get().getUsername(), foundUser.get().getPassword(), authorities);
     }
 }

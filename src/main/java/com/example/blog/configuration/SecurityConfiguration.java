@@ -24,6 +24,8 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfiguration {
     @Value("${CORS_ALLOWED}")
     private String corsAllowed;
+    @Value("${SECRET_KEY}")
+    private String secretKey;
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -39,7 +41,7 @@ public class SecurityConfiguration {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         AuthenticationConfiguration config = http.getSharedObject(AuthenticationConfiguration.class);
         AuthenticationManager authenticationManager = authenticationManager(config);
-        MyAuthenticationFilter authenticationFilter = new MyAuthenticationFilter(authenticationManager);
+        MyAuthenticationFilter authenticationFilter = new MyAuthenticationFilter(secretKey, authenticationManager);
         authenticationFilter.setFilterProcessesUrl("/api/login");
 
         http.cors().and().csrf().disable();
@@ -47,6 +49,7 @@ public class SecurityConfiguration {
         http.authorizeRequests().antMatchers(GET, "/api/post/**").permitAll();
         http.authorizeRequests().antMatchers(POST, "/api/user/**", "/api/login").permitAll();
         http.authorizeRequests().anyRequest().authenticated();
+        http.addFilter(authenticationFilter);
         http.addFilterBefore(new MyAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
@@ -59,7 +62,8 @@ public class SecurityConfiguration {
                 registry.addMapping("/**")
                         .allowedOrigins(corsAllowed)
                         .allowedMethods("*")
-                        .allowCredentials(true);
+                        .allowCredentials(true)
+                        .exposedHeaders("Set-Cookie");
             }
         };
     }

@@ -1,6 +1,8 @@
 package com.example.blog.controller;
 
+import com.example.blog.dto.PostDto;
 import com.example.blog.entity.Post;
+import com.example.blog.entity.ThumbsUp;
 import com.example.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -24,9 +27,10 @@ public class PostController {
     }
 
     @GetMapping("/page")
-    public ResponseEntity<List<Post>> getPagePosts(@RequestParam int page) {
+    public ResponseEntity<List<PostDto>> getPagePosts(@RequestParam int page) {
         List<Post> posts = postService.getPagePosts(page);
-        return ResponseEntity.ok().body(posts);
+        List<PostDto> postDto = createPostDto(posts);
+        return ResponseEntity.ok().body(postDto);
     }
 
     @PostMapping
@@ -35,4 +39,16 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    private List<PostDto> createPostDto(List<Post> postList) {
+        return postList.stream().map(post -> new PostDto(
+                post.getId(),
+                post.getTitle(),
+                post.getDescription(),
+                post.getImageUrl(),
+                post.getCategory(),
+                post.getMember().getUsername(),
+                post.getCreatedAt().toString(),
+                post.getLikes().stream().map(ThumbsUp::getUserId).collect(Collectors.toList())
+        )).collect(Collectors.toList());
+    }
 }
