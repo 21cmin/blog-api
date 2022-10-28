@@ -5,7 +5,6 @@ import com.example.blog.configuration.filter.MyAuthorizationFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -42,15 +41,15 @@ public class SecurityConfiguration {
         AuthenticationConfiguration config = http.getSharedObject(AuthenticationConfiguration.class);
         AuthenticationManager authenticationManager = authenticationManager(config);
         MyAuthenticationFilter authenticationFilter = new MyAuthenticationFilter(secretKey, authenticationManager);
-        authenticationFilter.setFilterProcessesUrl("/api/login");
+        authenticationFilter.setFilterProcessesUrl("/api/user/login");
 
         http.cors().and().csrf().disable();
         http.sessionManagement().sessionCreationPolicy(STATELESS);
         http.authorizeRequests().antMatchers(GET, "/api/post/**").permitAll();
-        http.authorizeRequests().antMatchers(POST, "/api/user/**", "/api/login").permitAll();
+        http.authorizeRequests().antMatchers( "/api/user/**").permitAll();
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(authenticationFilter);
-        http.addFilterBefore(new MyAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new MyAuthorizationFilter(secretKey), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
