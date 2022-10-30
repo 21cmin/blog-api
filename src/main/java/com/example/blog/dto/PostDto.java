@@ -15,5 +15,5 @@ public class PostDto {
     private String category;
     private String username;
     private String createdAt;
-    private List<Long> likes;
+    private List<String> likes;
 }

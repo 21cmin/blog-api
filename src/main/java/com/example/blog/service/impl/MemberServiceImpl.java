@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -30,11 +31,15 @@ public class MemberServiceImpl implements MemberService, UserDetailsService {
     private final RoleRepository roleRepository;
 
     @Override
+    public List<Member> findAllMembers() {
+        return memberRepository.findAll();
+    }
+
+    @Override
     public Member saveMember(Member member) {
         member.setPassword(passwordEncoder.encode(member.getPassword()));
         return memberRepository.save(member);
     }
-
     @Override
     public Optional<Member> findMemberById(Long id) {
         return memberRepository.findById(id);

@@ -37,7 +37,6 @@ public class MyAuthenticationFilter extends UsernamePasswordAuthenticationFilter
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         log.error("attempt login user: {}", username);
-        log.error("secret key: {}", secretKey);
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
         return manager.authenticate(token);
     }
@@ -49,7 +48,7 @@ public class MyAuthenticationFilter extends UsernamePasswordAuthenticationFilter
 
         String accessToken = JWT.create()
                 .withSubject(principal.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 10))
+                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 10))
                 .withIssuer(request.getRequestURL().toString())
                 .withClaim("roles", principal.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
                 .sign(algorithm);
@@ -64,7 +63,7 @@ public class MyAuthenticationFilter extends UsernamePasswordAuthenticationFilter
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
                 .path("/")
-                .httpOnly(false)
+                .httpOnly(true)
                 .sameSite("None")
                 .secure(true)
                 .build();
@@ -72,6 +71,7 @@ public class MyAuthenticationFilter extends UsernamePasswordAuthenticationFilter
         response.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         Map<String, String> map = new HashMap<>();
+        map.put("username", principal.getUsername());
         map.put("access_token", accessToken);
         new ObjectMapper().writeValue(response.getOutputStream(), map);
     }

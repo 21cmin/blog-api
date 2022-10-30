@@ -11,25 +11,22 @@ import com.example.blog.entity.Role;
 import com.example.blog.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
-import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
@@ -62,13 +59,16 @@ public class MemberController {
         ObjectMapper mapper = new ObjectMapper();
 
         Cookie[] cookies = request.getCookies();
-        Optional<Cookie> refreshCookie = stream(cookies).filter(cookie -> cookie.getName().equals("refresh_token")).findFirst();
 
-        if (refreshCookie.isEmpty()) {
+        if (cookies == null || cookies.length == 0) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             map.put("error_message", "No refresh token");
             mapper.writeValue(response.getOutputStream(), map);
         } else {
+            Optional<Cookie> refreshCookie = stream(cookies).filter(cookie -> cookie.getName().equals("refresh_token")).findFirst();
             try {
+                if (refreshCookie.isEmpty()) throw new RuntimeException();
+
                 Algorithm algorithm = Algorithm.HMAC256(secretKey.getBytes());
                 JWTVerifier verifier = JWT.require(algorithm).build();
                 DecodedJWT decodedToken = verifier.verify(refreshCookie.get().getValue());
@@ -77,17 +77,37 @@ public class MemberController {
                 if (member.isEmpty()) throw new NoSuchElementException();
                 String accessToken = JWT.create()
                         .withSubject(member.get().getUsername())
-                        .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 10))
+                        .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 10))
                         .withIssuer(request.getRequestURL().toString())
                         .withClaim("roles", member.get().getRoles().stream().map(Role::getName).collect(Collectors.toList()))
                         .sign(algorithm);
                 map.put("access_token", accessToken);
                 mapper.writeValue(response.getOutputStream(), map);
+                response.setStatus(OK.value());
             } catch (Exception exception) {
+                response.setStatus(UNAUTHORIZED.value());
                 map.put("error_message", exception.getMessage());
                 mapper.writeValue(response.getOutputStream(), map);
             }
         }
+    }
+
+    @GetMapping("/logout")
+    public void logout(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .secure(true)
+                .sameSite("None")
+                .build();
+        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.setStatus(OK.value());
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Member>> findAllMembers() {
+        return ResponseEntity.ok().body(memberService.findAllMembers());
     }
 
 }
