@@ -1,6 +1,7 @@
 package com.example.blog.controller;
 
 import com.example.blog.dto.PostDto;
+import com.example.blog.dto.UserAndPost;
 import com.example.blog.entity.Member;
 import com.example.blog.entity.Post;
 import com.example.blog.entity.ThumbsUp;
@@ -40,6 +41,19 @@ public class PostController {
         return ResponseEntity.ok().body(postDto);
     }
 
+    @GetMapping("{postId}")
+    public ResponseEntity<PostDto> getPost(@PathVariable Long postId) {
+        Optional<Post> findPost = postService.getPost(postId);
+        if (findPost.isEmpty()) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok().body(createPostDtoFromPost(findPost.get()));
+    }
+
+    @GetMapping("/category")
+    public ResponseEntity<List<PostDto>> getPostsByCategory(@RequestParam String cat) {
+        List<Post> postsByCategory = postService.getPostsByCategory(cat);
+        return ResponseEntity.ok().body(createPostDtoList(postsByCategory));
+    }
+
     @PostMapping
     public ResponseEntity<?> savePost(@RequestBody PostDto postDto) {
         Optional<Post> newPost = createPostFromPostDto(postDto);
@@ -50,15 +64,32 @@ public class PostController {
 
     @PutMapping
     public ResponseEntity<?> updatePost(@RequestBody PostDto postDto) {
-        Optional<Post> findPost = postService.getPost(postDto.getId());
-        if (findPost.isEmpty()) return ResponseEntity.status(BAD_REQUEST).build();
-        Post post = findPost.get();
-        post.setTitle(postDto.getTitle());
-        post.setDescription(postDto.getDescription());
-        post.setImageUrl(postDto.getImageUrl());
-        post.setCategory(postDto.getCategory());
+        Optional<Post> optionalPost = postService.modifyPost(postDto);
+        if (optionalPost.isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.status(ACCEPTED).build();
     }
+
+    @DeleteMapping("{postId}")
+    public ResponseEntity<?> deletePost(@PathVariable Long postId) {
+        log.error("get delete request {}", postId);
+        postService.deletePost(postId);
+        return ResponseEntity.status(ACCEPTED).build();
+    }
+
+    @PutMapping("/like/create")
+    public ResponseEntity<PostDto> createLike(@RequestBody UserAndPost userAndPost) {
+        Optional<Post> post = postService.createLike(userAndPost);
+        if (post.isEmpty()) return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok().body(createPostDtoFromPost(post.get()));
+    }
+
+    @PutMapping("/like/delete")
+    public ResponseEntity<PostDto> deleteLike(@RequestBody UserAndPost userAndPost) {
+        Optional<Post> post = postService.deleteLike(userAndPost);
+        if (post.isEmpty()) return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok().body(createPostDtoFromPost(post.get()));
+    }
+
 
     private Optional<Post> createPostFromPostDto(PostDto postDto) {
         Optional<Member> member = memberService.findMemberByName(postDto.getUsername());
@@ -67,12 +98,25 @@ public class PostController {
                 null,
                 postDto.getTitle(),
                 postDto.getDescription(),
-                postDto.getCategory(),
                 postDto.getImageUrl(),
+                postDto.getCategory(),
                 null,
                 member.get(),
                 new HashSet<>()
         ));
+    }
+
+    private PostDto createPostDtoFromPost(Post post) {
+        return new PostDto(
+                post.getId(),
+                post.getTitle(),
+                post.getDescription(),
+                post.getImageUrl(),
+                post.getCategory(),
+                post.getMember().getUsername(),
+                post.getCreatedAt().toString(),
+                post.getLikes().stream().map(ThumbsUp::getUsername).collect(Collectors.toList())
+        );
     }
 
     private List<PostDto> createPostDtoList(List<Post> postList) {

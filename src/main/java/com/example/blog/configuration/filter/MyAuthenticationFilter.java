@@ -48,7 +48,7 @@ public class MyAuthenticationFilter extends UsernamePasswordAuthenticationFilter
 
         String accessToken = JWT.create()
                 .withSubject(principal.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 10))
+                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 2))
                 .withIssuer(request.getRequestURL().toString())
                 .withClaim("roles", principal.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
                 .sign(algorithm);

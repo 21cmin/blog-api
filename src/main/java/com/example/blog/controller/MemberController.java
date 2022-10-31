@@ -77,7 +77,7 @@ public class MemberController {
                 if (member.isEmpty()) throw new NoSuchElementException();
                 String accessToken = JWT.create()
                         .withSubject(member.get().getUsername())
-                        .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 10))
+                        .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 2))
                         .withIssuer(request.getRequestURL().toString())
                         .withClaim("roles", member.get().getRoles().stream().map(Role::getName).collect(Collectors.toList()))
                         .sign(algorithm);

@@ -58,10 +58,7 @@ public class MemberServiceImpl implements MemberService, UserDetailsService {
     @Override
     public void makeRole() {
         Optional<Role> findRole = roleRepository.findByName(Roles.ROLE_USER.name());
-        if (findRole.isEmpty()) {
-            Role newRole = new Role(null, Roles.ROLE_USER.name());
-            roleRepository.save(newRole);
-        }
+        if (findRole.isEmpty()) roleRepository.save(new Role(null, Roles.ROLE_USER.name()));
     }
 
     @Override

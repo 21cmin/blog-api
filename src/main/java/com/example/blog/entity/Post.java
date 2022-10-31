@@ -29,10 +29,10 @@ public class Post {
     @Column(length = 1500)
     private String description;
 
-    private String category;
-
     @Column(name = "image_url")
     private String imageUrl;
+
+    private String category;
 
     @Column(name = "created_at")
     @CreatedDate
