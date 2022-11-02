@@ -35,6 +35,7 @@ public class MyAuthorizationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } else {
             String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            log.error("not authorization header {}", request);
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                 try {
                     String accessToken = authorizationHeader.substring("Bearer ".length());
